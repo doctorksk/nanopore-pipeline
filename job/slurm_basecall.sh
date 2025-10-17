@@ -28,13 +28,13 @@
 
 # Load your environment configuration from .bashrc
 # (This makes sure conda and other tools are available.)
-source ~/.bashrc
+# source ~/.bashrc
 
 # Activate the "test" conda environment (which presumably contains Dorado and dependencies).
 conda activate nanopore_env
 
 # Move to the working directory for the project.
-cd ~/nanopore/
+# cd ~/nanopore/
 
 # ------------------ Main job execution ------------------
 

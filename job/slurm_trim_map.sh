@@ -28,13 +28,13 @@
 # ------------------ Runtime environment setup ------------------
 
 # Load user shell configuration to make sure conda and other tools are available.
-source ~/.bashrc
+# source ~/.bashrc
 
 # Activate the "test" conda environment (which should contain cutadapt, minimap2, samtools, etc.).
 conda activate nanopore_env
 
 # Move into the working project directory.
-cd ~/nanopore/
+# cd ~/nanopore/
 
 # ------------------ Main job execution ------------------
 

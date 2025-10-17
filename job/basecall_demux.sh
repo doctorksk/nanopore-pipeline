@@ -4,7 +4,7 @@
 
 # ------------------ Setup ------------------
 
-cd ~/nanopore
+# cd ~/nanopore
 # Move into the working project directory.
 
 # Read configuration file (defines variables like dorado_dir, sheet_dir, etc.)

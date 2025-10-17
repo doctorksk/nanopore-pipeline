@@ -4,7 +4,7 @@
 
 # ------------------ Setup ------------------
 
-cd ~/nanopore
+# cd ~/nanopore
 # Move into the project working directory.
 
 # Load experiment configuration variables (sheet_dir, quality, minlength, maxlength, ref, map, etc.)
