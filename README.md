@@ -36,6 +36,22 @@ conda env create -f nanopore_env.yml
 conda env create -f crispresso2_env.yml
 ```
 
+### 4. Download Dorado installation and basecalling models
+
+Follow instructions [here](https://github.com/nanoporetech/dorado#installation) to download the latest dorado installation to the `dorado_model/` folder.
+
+To ensure that the pipeline can work without an internet connection, download all available Dorado models by running:
+
+```bash
+cd model
+dorado download --model all
+cd ..
+```
+
+### 5. Download appropriate reference FASTA files for mapping
+
+Download the appropriate reference genomes or amplicons for minimap2 mapping and place it inside the `reference` folder. For example, the hg38 (GRCh38) analysis set `hg38.analysisSet.fa.gz` from UCSC found [here](https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/analysisSet/).
+
 ## Usage
 
 ### 1. Prepare input data
@@ -88,4 +104,5 @@ sbatch job/slurm_trim_map.sh
 ## Author
 
 Developed by **Gabriel Martínez-Gálvez**
+
 Woltjen Laboratory, Center for iPS Cell Research and Application (CiRA), Kyoto Universiry
