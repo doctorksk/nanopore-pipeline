@@ -29,11 +29,11 @@ __pycache__/
 # =========================
 # Project-specific directories
 # =========================
-analysis/
-data/
-model/
-reference/
-dorado_model/
+analysis/*
+data/*
+model/*
+reference/*
+dorado_model/*
 logs/
 
 # Allow .gitkeep files so directories are retained
