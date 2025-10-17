@@ -36,6 +36,14 @@ reference/
 dorado_model/
 logs/
 
+# Allow .gitkeep files so directories are retained
+!analysis/.gitkeep
+!data/.gitkeep
+!model/.gitkeep
+!reference/.gitkeep
+!dorado_model/.gitkeep
+!logs/.gitkeep
+
 # =========================
 # Optional large intermediate files
 # =========================
