@@ -38,9 +38,6 @@ minlength=1500
 # Indicate maximum read length to keep, default 2147483647
 maxlength=6000
 
-# Indicate path to mapping reference, e.g. ~/nanopore/reference/grch38/hg38.analysisSet.fa.gz
-# ref=~/nanopore/reference/custom/454e2_hla_ABCH_ABj.fasta
-
 #   .-.-.   .-.-.   .-.-.   .-.-.   .-.-.   .-.-.   .-.-.   .-.-
 #  / / \ \ / / \ \ / / \ \ / / \ \ / / \ \ / / \ \ / / \ \ / / \
 # `-'   `-`-'   `-`-'   `-`-'   `-`-'   `-`-'   `-`-'   `-`-'
