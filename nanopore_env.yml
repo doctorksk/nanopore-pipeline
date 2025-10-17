@@ -1,0 +1,11 @@
+name: nanopore_env
+channels:
+  - defaults
+  - bioconda
+  - conda-forge
+dependencies:
+  - chopper
+  - minimap2
+  - nanopack
+  - samtools
+prefix: /home/martinez.galvez/miniforge3/envs/nanopore_env

@@ -1,0 +1,49 @@
+# =========================
+# General
+# =========================
+.DS_Store
+*.log
+*.out
+*.err
+*.tmp
+*.swp
+*.pyc
+*.pyo
+*.bak
+
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+
+# =========================
+# Environments and system files
+# =========================
+.env/
+.venv/
+.mamba/
+.conda/
+.ipynb_checkpoints/
+*.egg-info/
+*.lock
+
+# =========================
+# Project-specific directories
+# =========================
+analysis/
+data/
+model/
+reference/
+dorado_model/
+logs/
+
+# =========================
+# Optional large intermediate files
+# =========================
+*.bam
+*.bai
+*.fastq
+*.fastq.gz
+*.fasta
+*.fna
+*.fa
+*.sam
