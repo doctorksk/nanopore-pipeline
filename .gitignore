@@ -42,7 +42,6 @@ logs/
 !model/.gitkeep
 !reference/.gitkeep
 !dorado_model/.gitkeep
-!logs/.gitkeep
 
 # =========================
 # Optional large intermediate files
