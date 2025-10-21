@@ -11,20 +11,20 @@
 source job/config.sh
 
 # Load Dorado basecaller by appending its directory to PATH.
-export PATH=$PATH:$dorado_dir
+export PATH=$PATH:dorado_model/$dorado_dir/bin/
 
 # ------------------ Metadata extraction ------------------
 
 # Extract experiment ID from the sample sheet (column 3 of row 2).
-expid=$(awk -F',' 'NR==2 {print $3}' $sheet_dir)
+expid=$(awk -F',' 'NR==2 {print $3}' job/$sheet_dir)
 
 # Extract kit name from the sample sheet (column 2 of row 2).
-kit_name=$(awk -F',' 'NR==2 {print $2}' $sheet_dir)
+kit_name=$(awk -F',' 'NR==2 {print $2}' job/$sheet_dir)
 
 # ------------------ Model specification ------------------
 
-# Define Dorado basecalling model (here: R10.4.1 flow cell, E8.2 pore, 400bps, sup accuracy).
-model=model/dna_r10.4.1_e8.2_400bps_sup@v5.2.0
+# Define Dorado basecalling model (default: R10.4.1 flow cell, E8.2 pore, 400bps, sup accuracy).
+model=model/$model_dir
 
 # ------------------ Directory setup ------------------
 
@@ -41,7 +41,7 @@ mkdir -p $logs_out $basecall_out $demux_out
 
 # Save a copy of the config and sample sheet files to the logs folder for reproducibility.
 cp job/config.sh $logs_out
-cp $sheet_dir $logs_out
+cp job/$sheet_dir $logs_out
 
 # ------------------ Main execution ------------------
 
