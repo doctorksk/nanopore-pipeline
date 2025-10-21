@@ -1,4 +1,4 @@
-name: crispresso2_env_temp
+name: crispresso2_env
 channels:
   - defaults
   - bioconda
@@ -12,4 +12,4 @@ dependencies:
   - pyfaidx
   - pysam
   - samtools
-prefix: /home/martinez.galvez/miniforge3/envs/crispresso2_env_temp
+prefix: /home/martinez.galvez/miniforge3/envs/crispresso2_env
