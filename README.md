@@ -38,7 +38,7 @@ conda env create -f crispresso2_env.yml
 
 ### 4. Download the dorado installation and basecalling models
 
-Follow instructions [here](https://github.com/nanoporetech/dorado#installation) to download the latest dorado installation (i.e. dorado-x.y.z-linux-x64). Uncompress the downloaded file and transfer the resulting folder inside the `dorado_model/` folder.
+Follow instructions [here](https://github.com/nanoporetech/dorado#installation) to download the latest dorado installation (i.e. dorado-x.y.z-linux-x64). Decompress the downloaded file and transfer the resulting folder inside the `dorado_model/` folder.
 
 Grant dorado execution privileges by running:
 
@@ -51,7 +51,7 @@ Verify dorado installation by running:
 dorado_model/bin/dorado --version
 ```
 
-To ensure that the pipeline can work without an internet connection, download all available Dorado models by running:
+To ensure that the pipeline can work without an internet connection, download all available dorado basecalling models by running:
 
 ```bash
 cd model
