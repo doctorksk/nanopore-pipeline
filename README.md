@@ -65,7 +65,7 @@ Download the appropriate reference genomes or amplicons for minimap2 mapping and
 
 ## Usage
 
-### 1. Prepare input data
+### 1. Load input data
 Place your Nanopore sequencing output folder inside the `data/` folder as follows: `data/experiment_id`.
 
 ### 2. Configure the run
