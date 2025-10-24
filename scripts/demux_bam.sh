@@ -1,6 +1,6 @@
 #!/bin/bash
 # demux_bam.sh
-# This script demultiplexes reads from a BAM file using Dorado,
+# This script demultiplexes reads from a BAM file using dorado,
 # separates them by barcode according to a sample sheet,
 # and generates per-sample QC plots with NanoPlot.
 
@@ -12,7 +12,7 @@ outdir=$4         # Output directory for demultiplexed reads and QC plots
 
 # ------------------ Demultiplexing ------------------
 
-# Perform barcode-based demultiplexing using Dorado.
+# Perform barcode-based demultiplexing using dorado.
 # Options:
 #   --kit-name       → Specify the sequencing kit to identify correct barcode set.
 #   --sample-sheet   → Provide CSV linking barcodes to sample identifiers.
