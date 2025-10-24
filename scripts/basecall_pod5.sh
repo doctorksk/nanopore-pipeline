@@ -1,6 +1,6 @@
 #!/bin/bash
 # basecall_pod5.sh
-# This script performs basecalling from POD5 files using Dorado,
+# This script performs basecalling from POD5 files using dorado,
 # demultiplexes with barcodes, and generates QC plots with NanoPlot.
 
 # ------------------ Input arguments ------------------
@@ -11,7 +11,7 @@ outdir=$4           # Output directory for results
 
 # ------------------ Basecalling ------------------
 
-# Perform basecalling using Dorado.
+# Perform basecalling using dorado.
 # Options:
 #   --no-trim           → Keep full-length reads (don’t trim adapters).
 #   --kit-name          → Specify sequencing kit so Dorado knows which barcodes to expect.
