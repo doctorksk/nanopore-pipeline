@@ -1,36 +1,37 @@
 #!/bin/bash
-# This script orchestrates Dorado basecalling and demultiplexing
+# This script orchestrates dorado basecalling and demultiplexing
 # for a Nanopore sequencing experiment.
 
 # ------------------ Setup ------------------
 
-# cd ~/nanopore
-# Move into the working project directory.
-
-# Read configuration file (defines variables like dorado_dir, sheet_dir, etc.)
+# Read configuration file (defines variables like dorado_dir and model_dir).
 source job/config.sh
+# Auto-clean sample sheet for Windows line endings (i.e. "\r").
+[[ -f "job/input_sheet.csv" ]] && tmp=$(mktemp) && tr -d '\r' < "job/input_sheet.csv" > "$tmp" && mv "$tmp" "job/input_sheet.csv"
 
-# Load Dorado basecaller by appending its directory to PATH.
+# Load dorado basecaller by appending its directory to PATH.
 export PATH=$PATH:dorado_model/$dorado_dir/bin/
 
 # ------------------ Metadata extraction ------------------
 
 # Extract experiment ID from the sample sheet (column 3 of row 2).
-expid=$(awk -F',' 'NR==2 {print $3}' job/$sheet_dir)
+expid=$(awk -F',' 'NR==2 {print $3}' job/input_sheet.csv) 
 
 # Extract kit name from the sample sheet (column 2 of row 2).
-kit_name=$(awk -F',' 'NR==2 {print $2}' job/$sheet_dir)
+kit_name=$(awk -F',' 'NR==2 {print $2}' job/input_sheet.csv)
 
 # ------------------ Model specification ------------------
 
-# Define Dorado basecalling model (default: R10.4.1 flow cell, E8.2 pore, 400bps, sup accuracy).
+# Define dorado basecalling model (default: R10.4.1 flow cell, E8.2 pore, 400bps, sup accuracy).
 model=model/$model_dir
+
+echo -e "Experiment: $expid\nKit: $kit_name\nBasecalling model: $model_dir"
 
 # ------------------ Directory setup ------------------
 
 # Define output directories for basecalling, demultiplexing, and logs.
-basecall_out=analysis/$expid/basecalled/raw/
-demux_out=analysis/$expid/demux/raw/
+basecall_out=analysis/$expid/basecalled/raw
+demux_out=analysis/$expid/demux/raw
 logs_out=analysis/$expid/logs
 
 # Locate the pod5 directory (input files) inside the data folder for this experiment.
@@ -41,7 +42,7 @@ mkdir -p $logs_out $basecall_out $demux_out
 
 # Save a copy of the config and sample sheet files to the logs folder for reproducibility.
 cp job/config.sh $logs_out
-cp job/$sheet_dir $logs_out
+cp job/input_sheet.csv $logs_out
 
 # ------------------ Main execution ------------------
 
@@ -53,10 +54,9 @@ bash scripts/basecall_pod5.sh \
     "$basecall_out"
 
 # Run demultiplexing script: uses kit, sample sheet, basecalling output, and demux folder.
-
-# Create a Dorado-compatible sample sheet with only the first 5 columns
+# Create a temporary dorado-compatible sample sheet with only the first 5 columns of input_sheet.csv
 sheet_dir_dorado=$logs_out/sample_sheet_dorado.csv
-cut -d',' -f1-5 $sheet_dir > $sheet_dir_dorado
+cut -d',' -f1-5 job/input_sheet.csv > $sheet_dir_dorado
 
 # Call demux script with the reduced sheet
 bash scripts/demux_bam.sh \
@@ -64,3 +64,6 @@ bash scripts/demux_bam.sh \
     "$sheet_dir_dorado" \
     "$basecall_out" \
     "$demux_out"
+
+# Delete temporary file
+rm $logs_out/sample_sheet_dorado.csv
