@@ -82,9 +82,9 @@ Specify:
 - **kit:** barcoding kit used (e.g. SQK-NBD114-24)
 - **experiment_id:** ID of the experiment to abalyze. Should match the appropriate folder name inside `data/`
 - **barcode:** barcode number. Output files will not contain this barcode ID
-**- alias:** custom id for the barcode. Output files will contain this identifier
-- **reference:** path relative to the `reference/` folder (e.g. *grch38/hg38.analysisSet.fa.gz*, not *reference/grch38/hg38.analysisSet.fa.gz*)
+- **alias:** custom id for the barcode. Output files will contain this identifier
 > **Note:** aliases may **ONLY** include alphanumeric characters (Aa-Zz, 0-9) and hyphens (-). **DO NOT** include spaces, underscores (_), or other symbols (e.g. +, $, &, etc.)
+- **reference:** path relative to the `reference/` folder (e.g. *grch38/hg38.analysisSet.fa.gz*, not *reference/grch38/hg38.analysisSet.fa.gz*)
 - **quality:** minimum average read quality for trimming
 - **minlength:** minimum read length for trimming
 - **maxlength:** maximum read length for trimming
