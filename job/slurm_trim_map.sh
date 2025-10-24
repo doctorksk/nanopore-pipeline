@@ -1,21 +1,20 @@
 #!/bin/bash
-# This script is run with the Bash shell.
+# This script is run with the bash shell.
 
 #SBATCH -J trim_map
 # Sets the SLURM job name to "trim_map".
 # Makes it easier to track the job in the queue.
 
-#SBATCH -o logs/trim_map_%j.out
-# Redirects standard output (stdout) to a log file in the "logs" directory.
+#SBATCH -o slurm_logs/trim_map_%j.out
+# Redirects standard output (stdout) to a log file in the "slurm_logs" directory.
 # %j gets replaced by the SLURM job ID to keep log files unique.
 
-#SBATCH -e logs/trim_map_%j.err
-# Redirects standard error (stderr) to a separate log file in the "logs" directory.
+#SBATCH -e slurm_logs/trim_map_%j.err
+# Redirects standard error (stderr) to a separate log file in the "slurm_logs" directory.
 # Again, %j ensures uniqueness per job run.
 
 #SBATCH -p cpu
 # Submits the job to the "cpu" partition (queue).
-# Unlike Dorado, this stage only requires CPUs.
 
 #SBATCH -t 12:00:00
 # Sets a maximum runtime of 12 hours.
@@ -27,14 +26,23 @@
 
 # ------------------ Runtime environment setup ------------------
 
-# Load user shell configuration to make sure conda and other tools are available.
-# source ~/.bashrc
+# Load and activate miniconda3 module (This makes sure conda and other tools are available).
+module load miniconda3
+eval "$(conda shell.bash hook)"
 
-# Activate the "test" conda environment (which should contain cutadapt, minimap2, samtools, etc.).
+# Activate the "nanopore_env" conda environment
 conda activate nanopore_env
 
-# Move into the working project directory.
-# cd ~/nanopore/
+# ------------------ Repository path handling ------------------
+
+# Automatically find the directory of this SLURM script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Move to the directory from which sbatch was run, i.e. nanopore_pipeline
+cd "$SLURM_SUBMIT_DIR"
+
+# Confirm current working directory (appears in SLURM .out log)
+echo "Running from project root: $(pwd)"
 
 # ------------------ Main job execution ------------------
 

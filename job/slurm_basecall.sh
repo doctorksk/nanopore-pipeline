@@ -1,22 +1,22 @@
 #!/bin/bash
-# This line tells the system to run the script with the Bash shell.
+# This line tells the system to run the script with the bash shell.
 
 #SBATCH -J basecall_demux
 # Sets the job name in SLURM to "basecall_demux". Useful for monitoring jobs.
 
-#SBATCH -o logs/basecall_demux_%j.out
-# Redirects standard output (stdout) to a file in the "logs" directory.
+#SBATCH -o slurm_logs/basecall_demux_%j.out
+# Redirects standard output (stdout) to a file in the "slurm_logs" directory.
 # %j will be replaced with the job ID so each run gets a unique log file.
 
-#SBATCH -e logs/basecall_demux_%j.err
-# Redirects standard error (stderr) to a separate log file in the "logs" directory.
+#SBATCH -e slurm_logs/basecall_demux_%j.err
+# Redirects standard error (stderr) to a separate log file in the "slurm_logs" directory.
 # Again, %j ensures uniqueness per job.
 
 #SBATCH -p gpu
 # Requests the "gpu" partition/queue. This ensures the job runs on GPU-capable nodes.
 
 #SBATCH --gpus 2
-# Requests 2 GPUs for this job (Dorado basecalling is GPU-intensive).
+# Requests 2 GPUs for this job (dorado basecalling is GPU-intensive).
 
 #SBATCH -t 24:00:00
 # Sets a time limit of 24 hours for the job. The scheduler will kill the job if it exceeds this.
@@ -26,15 +26,23 @@
 
 # ------------------ Runtime environment setup ------------------
 
-# Load your environment configuration from .bashrc
-# (This makes sure conda and other tools are available.)
-# source ~/.bashrc
+# Load and activate miniconda3 module (This makes sure conda and other tools are available).
+module load miniconda3
+eval "$(conda shell.bash hook)"
 
-# Activate the "test" conda environment (which presumably contains Dorado and dependencies).
+# Activate the "nanopore_env" conda environment
 conda activate nanopore_env
 
-# Move to the working directory for the project.
-# cd ~/nanopore/
+# ------------------ Repository path handling ------------------
+
+# Automatically find the directory of this SLURM script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Move to the directory from which sbatch was run, i.e. nanopore_pipeline
+cd "$SLURM_SUBMIT_DIR"
+
+# Confirm current working directory (appears in SLURM .out log)
+echo "Running from project root: $(pwd)"
 
 # ------------------ Main job execution ------------------
 
