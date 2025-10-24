@@ -1,2 +1,2 @@
-flow_cell_id,kit,experiment_id,barcode,alias,reference
-FBD73709,SQK-NBD114-24,20XX_experiment_id,barcodeXX,easy_id,reference.fasta
+flow_cell_id,kit,experiment_id,barcode,alias,reference,quality,minlength,maxlength
+FBD73709,SQK-NBD114-24,20XX_experiment_id,barcodeXX,easy_id,reference.fasta,15,1,2147483647
