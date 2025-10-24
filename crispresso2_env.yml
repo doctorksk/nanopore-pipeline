@@ -1,8 +1,7 @@
 name: crispresso2_env
 channels:
-  - defaults
-  - bioconda
   - conda-forge
+  - bioconda
 dependencies:
   - bioconda::edlib
   - bioconda::jq
@@ -12,4 +11,3 @@ dependencies:
   - pyfaidx
   - pysam
   - samtools
-prefix: /home/martinez.galvez/miniforge3/envs/crispresso2_env
