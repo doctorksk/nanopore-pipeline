@@ -122,22 +122,22 @@ Running the pipeline will create the `slurm_logs` folder containing standard out
 ```
 analysis/experiment_id/
 ├── basecalled/ # Basecalling output folder
-    └── raw/ # Raw dorado basecalled data
-        ├── calls.bam # Unaligned output bam file
-        ├── summary.tsv # Sequencing summary file
-        └── nanoplot/ # NanoPlot diagnostic files
+│   └── raw/ # Raw dorado basecalled data
+│       ├── calls.bam # Unaligned output bam file
+│       ├── summary.tsv # Sequencing summary file
+│       └── nanoplot/ # NanoPlot diagnostic files
 ├── demux/ # Demultiplexing output folder
-    ├── raw/ # Raw dorado demultiplexed data
-        ├── run-id_alias.fastq # Demultiplexed reads by alias (barcode)
-        ├── run-id_unclassified.fastq # Unclassified reads
-        └── nanoplot/ # NanoPlot diagnostic files
-    ├── trimmed/ # Read trimming output folder
-        ├── run-id_alias_trimmed.fastq # Trimmed reads by alias (barcode)
-        └── nanoplot/ # Nanoplot diagnostic files
-    └── mapped/ (optional) # Read mapping output folder
-        ├── mm2_run-id_alias_trimmed.bam # Mapped reads by alias (barcode)
-        ├── mm2_run-id_alias_trimmed.bam.bai # Index files by alias (barcode)
-        └── nanoplot/ # NanoPlot diagnostic files
+│   ├── raw/ # Raw dorado demultiplexed data
+│   │   ├── run-id_alias.fastq # Demultiplexed reads by alias (barcode)
+│   │   ├── run-id_unclassified.fastq # Unclassified reads
+│   │   └── nanoplot/ # NanoPlot diagnostic files
+│   ├── trimmed/ # Read trimming output folder
+│   │   ├── run-id_alias_trimmed.fastq # Trimmed reads by alias (barcode)
+│   │   └── nanoplot/ # Nanoplot diagnostic files
+│   └── mapped/ (optional) # Read mapping output folder
+│       ├── mm2_run-id_alias_trimmed.bam # Mapped reads by alias (barcode)
+│       ├── mm2_run-id_alias_trimmed.bam.bai # Index files by alias (barcode)
+│       └── nanoplot/ # NanoPlot diagnostic files
 └── logs
     ├── config.sh # Copy of config file used to generate the data
     └── input_sheet.csv # Copy of the input sheet used to generate the data
