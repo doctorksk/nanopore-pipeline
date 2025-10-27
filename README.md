@@ -6,13 +6,13 @@ Analysis pipeline of Nanopore pod5 files. Basecalling, read trimming, optional m
 
 ```
 nanopore_pipeline/
-├── analysis/ # Output directory
-├── data/ # Input directory
-├── dorado_model/ # ONT dorado installations
-├── job/ # SLURM scripts and run-specific input files
-├── model/ # Dorado basecalling models
-├── reference/ # Reference FASTAs
-└── scripts/ # Core bash and Python scripts
+├── analysis/       → Output directory
+├── data/           → Input directory
+├── dorado_model/   → ONT dorado installations
+├── job/            → SLURM scripts and run-specific input files
+├── model/          → Dorado basecalling models
+├── reference/      → Reference FASTAs
+└── scripts/        → Core bash and Python scripts
 ```
 ---
 ## Installation
@@ -61,51 +61,59 @@ cd ..
 
 ### 5. Download appropriate reference FASTA files for mapping
 
-Download the appropriate reference genomes or amplicons for minimap2 mapping and place it inside the `reference` folder. For example, the hg38 (GRCh38) analysis set `hg38.analysisSet.fa.gz` from UCSC found [here](https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/analysisSet/).
+Download the appropriate reference genomes or amplicons for minimap2 mapping and place it inside the `reference/` folder. For example, the hg38 (GRCh38) analysis set `hg38.analysisSet.fa.gz` from UCSC found [here](https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/analysisSet/).
 
 ## Usage
 
 ### 1. Load input data
-Place your Nanopore sequencing output folder inside the `data/` folder as follows: `data/experiment_id`.
+Place your Nanopore sequencing output folder inside the `data/` folder as follows: `data/experiment_id/`.
 
 ### 2. Configure the run
 
-Edit `job/input_sheet.csv` file. Each row represents a different barcode. In case the file is corrupted, run the following, edit `job/input_sheet.csv` and try again.
+Edit `job/input_sheet.csv` file. Each row represents a different barcode. 
 
-```bash
-rm job/input_sheet.csv
-cp job/input_sheet_template.csv job/input_sheet.csv
-```
+> **Note:** In case `job/input_sheet.csv` becomes corrupted, delete it and remake it by copying and renaming it from the template file `job/input_sheet_template.csv` by running the following:
+> ```bash
+> rm job/input_sheet.csv
+> cp job/input_sheet_template.csv job/input_sheet.csv
+> ```
 
 Specify:
 - **flow_cell_id:** ID of the flowcell (e.g. FBD73709)
 - **kit:** barcoding kit used (e.g. SQK-NBD114-24)
-- **experiment_id:** ID of the experiment to abalyze. Should match the appropriate folder name inside `data/`
-- **barcode:** barcode number. Output files will not contain this barcode ID
-- **alias:** custom id for the barcode. Output files will contain this identifier
+- **experiment_id:** ID of the experiment to analyze. Should match the appropriate folder name inside `data/`
+- **barcode:** barcode number. *Output file names *WILL NOT* contain this barcode ID*
+- **alias:** custom id for the barcode. *Output file names *WILL* contain this identifier*
 > **Note:** aliases may **ONLY** include alphanumeric characters (Aa-Zz, 0-9) and hyphens (-). **DO NOT** include spaces, underscores (_), or other symbols (e.g. +, $, &, etc.)
 - **reference:** path relative to the `reference/` folder (e.g. *grch38/hg38.analysisSet.fa.gz*, not *reference/grch38/hg38.analysisSet.fa.gz*)
 - **quality:** minimum average read quality for trimming
 - **minlength:** minimum read length for trimming
 - **maxlength:** maximum read length for trimming
 
-Edit the configuration file `job/config.sh`.
+Edit the configuration file `job/config.sh` if needed.
 
 Specify:
-- Dorado version and model path
-- Whether to perform mapping after read trimming: `map=TRUE` or `map=FALSE`
+- **dorado_dir:** name of the uncompressed folder with the desired dorado version (e.g. *dorado-1.1.1-linux-x64*
+- **model_dir:** name of the desired basecalling model as it appears inside the `model/` folder (e.g. *dna_r10.4.1_e8.2_400bps_sup@v5.2.0*)
+- **map:** `map=TRUE` or `map=FALSE`, whether mapping is or is not to be performed, respectively
+
+> **Note:** In case `job/config.sh` is corrupted, delete it and remake it by copying and renaming it from the template file `job/config_template.sh` by running the following:
+> ```bash
+> rm job/config.sh
+> cp job/config_template.sh job/config.sh
+> ```
 
 ### 3. Run the pipeline
 
-The pipeline is divided into two larger SLURM processes. The first process basecalls pod5 reads and demultiplexes them by barcode number. The second process trims reads and maps them against the specified reference files in `job/input_sheet.csv`.
+The pipeline is divided into two larger SLURM jobs. The first job basecalls pod5 reads and demultiplexes them by barcode. The second job trims reads and optionally maps them against the reference files specified in `job/input_sheet.csv`.
 
-To submit both SLURM processes:
+To basecall, demultiples, trim (and map), submit both SLURM jobs by running the following:
 ```bash
 jid1=$(sbatch --parsable job/slurm_basecall.sh)
 sbatch --dependency=afterok:$jid1 job/slurm_trim_map.sh
 ```
 
-Alternatively, users can run each process manually:
+Alternatively, users can run each job separately by running:
 
 ```bash
 sbatch job/slurm_basecall.sh
@@ -116,31 +124,30 @@ sbatch job/slurm_trim_map.sh
 ```
 > **Note:** Trimming and mapping can only happen on fully basecalled and demultiplexed files.
 
----
-Running the pipeline will create the `slurm_logs` folder containing standard output and standard error files from SLURM and the `analysis/experiment_id` folder with the following directory structure:
+Running the pipeline will create the `slurm_logs/` folder containing standard output and standard error files and the `analysis/experiment_id/` folder with the following directory structure:
 
 ```
 analysis/experiment_id/
-├── basecalled/ # Basecalling output folder
-│   └── raw/ # Raw dorado basecalled data
-│       ├── calls.bam # Unaligned output bam file
-│       ├── summary.tsv # Sequencing summary file
-│       └── nanoplot/ # NanoPlot diagnostic files
-├── demux/ # Demultiplexing output folder
-│   ├── raw/ # Raw dorado demultiplexed data
-│   │   ├── run-id_alias.fastq # Demultiplexed reads by alias (barcode)
-│   │   ├── run-id_unclassified.fastq # Unclassified reads
-│   │   └── nanoplot/ # NanoPlot diagnostic files
-│   ├── trimmed/ # Read trimming output folder
-│   │   ├── run-id_alias_trimmed.fastq # Trimmed reads by alias (barcode)
-│   │   └── nanoplot/ # Nanoplot diagnostic files
-│   └── mapped/ (optional) # Read mapping output folder
-│       ├── mm2_run-id_alias_trimmed.bam # Mapped reads by alias (barcode)
-│       ├── mm2_run-id_alias_trimmed.bam.bai # Index files by alias (barcode)
-│       └── nanoplot/ # NanoPlot diagnostic files
+├── basecalled/                                 → Basecalling output folder
+│   └── raw/                                    → Raw dorado basecalled data
+│       ├── calls.bam                           → Unaligned output bam file
+│       ├── summary.tsv                         → Sequencing summary file
+│       └── nanoplot/                           → NanoPlot diagnostic files
+├── demux/                                      → Demultiplexing output folder
+│   ├── raw/                                    → Raw dorado demultiplexed data
+│   │   ├── run-id_alias.fastq                  → Demultiplexed reads by alias (barcode)
+│   │   ├── run-id_unclassified.fastq           → Unclassified reads
+│   │   └── nanoplot/                           → NanoPlot diagnostic files
+│   ├── trimmed/                                → Read trimming output folder
+│   │   ├── run-id_alias_trimmed.fastq          → Trimmed reads by alias (barcode)
+│   │   └── nanoplot/                           → Nanoplot diagnostic files
+│   └── mapped/ (optional)                      → Read mapping output folder
+│       ├── mm2_run-id_alias_trimmed.bam        → Mapped reads by alias (barcode)
+│       ├── mm2_run-id_alias_trimmed.bam.bai    → Index files by alias (barcode)
+│       └── nanoplot/                           → NanoPlot diagnostic files
 └── logs
-    ├── config.sh # Copy of config file used to generate the data
-    └── input_sheet.csv # Copy of the input sheet used to generate the data
+    ├── config.sh                               → Copy of config file used to generate the data
+    └── input_sheet.csv                         → Copy of the input sheet used to generate the data
 ```
 
 ## Author
