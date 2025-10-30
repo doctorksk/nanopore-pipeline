@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - bioconda::edlib
   - bioconda::jq
   - bioconda::minimap2
   - biopython
@@ -11,3 +10,6 @@ dependencies:
   - pyfaidx
   - pysam
   - samtools
+  - pip
+  - pip:
+      - edlib
