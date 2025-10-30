@@ -2,6 +2,8 @@
 
 Analysis pipeline of Nanopore pod5 files. Basecalling, read trimming, optional mapping, and scripts to perform indel analysis of mapped reads using CRISPResso2.
 
+> **IMPORTANT:** This pipeline is not compatible with dorado version 1.2.0 or later. The latest supported version is dorado 1.1.1.
+
 ## Directory structure
 
 ```
@@ -38,26 +40,43 @@ conda env create -f crispresso2_env.yml
 
 ### 4. Download the dorado installation and basecalling models
 
-Follow instructions [here](https://github.com/nanoporetech/dorado#installation) to download the latest dorado installation (i.e. dorado-x.y.z-linux-x64). Decompress the downloaded file and transfer the uncompressed folder inside the `dorado_model/` folder.
+#### 4.1. Download dorado
+Follow the instructions in the [official dorado repository](https://github.com/nanoporetech/dorado#installation) to obtain the latest comparible dorado release (e.g. *dorado-x.y.z-linux-x64*). 
 
-Grant dorado execution privileges by running:
+#### 4.2. Extract and move the dorado folder
+Decompress the downloaded file, and move the extracted folder (e.g. `dorado-x.y.z-linux-x64/`) into the `dorado_model/`  folder.
+
+The resulting structure should look like:
+```
+dorado_model/
+└── dorado-x.y.z-linux-x64/
+    ├── bin/
+    └── ...
+```
+#### 4.3 Grant dorado execution permision
+Give dorado execution privileges by running:
 
 ```bash
-chmod +x dorado_model/bin/dorado
+chmod +x dorado_model/[dorado_installation]/bin/dorado
 ```
+> Replace `dorado_installation` with the actual folder name (e.g. `dorado-x.y.z-linux-x64`).
 
-Verify dorado installation by running:
+#### 4.4 Verify dorado installation
+Verify the dorado installation by running:
 ```bash
-dorado_model/bin/dorado --version
+dorado_model/[dorado_installation]/bin/dorado --version
 ```
+> Replace `dorado_installation` with the actual folder name (e.g. `dorado-x.y.z-linux-x64`).
 
+#### 4.5 Download basecalling models
 To ensure that the pipeline can work without an internet connection, download all available dorado basecalling models by running:
 
 ```bash
 cd model
-../dorado_model/bin/dorado download --model all
+../dorado_model/[dorado_installation]/bin/dorado download --model all
 cd ..
 ```
+> Replace `dorado_installation` with the actual folder name (e.g. `dorado-x.y.z-linux-x64`).
 
 ### 5. Download appropriate reference FASTA files for mapping
 
@@ -65,10 +84,12 @@ Download the appropriate reference genomes or amplicons for minimap2 mapping and
 
 ## Usage
 
-### 1. Load input data
-Place your Nanopore sequencing output folder inside the `data/` folder as follows: `data/experiment_id/`.
+### Dorado basecalling, trimming, and mapping
 
-### 2. Configure the run
+#### 1. Load input data
+Place your Nanopore sequencing output folder inside the `data/` folder as follows: `data/[experiment_id]/`.
+
+#### 2. Configure the run
 
 Edit `job/input_sheet.csv` file. Each row represents a different barcode. 
 
@@ -103,7 +124,7 @@ Specify:
 > cp job/config_template.sh job/config.sh
 > ```
 
-### 3. Run the pipeline
+#### 3. Run the pipeline
 
 The pipeline is divided into two larger SLURM jobs. The first job basecalls pod5 reads and demultiplexes them by barcode. The second job trims reads and optionally maps them against the reference files specified in `job/input_sheet.csv`.
 
@@ -130,28 +151,74 @@ Running the pipeline will create the `slurm_logs/` folder containing standard ou
 analysis/experiment_id/
 ├── basecalled/                                 → Basecalling output folder
 │   └── raw/                                    → Raw dorado basecalled data
-│       ├── calls.bam                           → Unaligned output bam file
+│       ├── calls.bam                           → Unaligned dorado basecalling output bam file
 │       ├── summary.tsv                         → Sequencing summary file
-│       └── nanoplot/                           → NanoPlot diagnostic files
+│       └── nanoplot/                           → NanoPlot basecalling diagnostic files
 ├── demux/                                      → Demultiplexing output folder
 │   ├── raw/                                    → Raw dorado demultiplexed data
 │   │   ├── run-id_alias.fastq                  → Demultiplexed reads by alias (barcode)
 │   │   ├── run-id_unclassified.fastq           → Unclassified reads
-│   │   └── nanoplot/                           → NanoPlot diagnostic files
+│   │   └── nanoplot/                           → NanoPlot demultiplexed diagnostic files
 │   ├── trimmed/                                → Read trimming output folder
 │   │   ├── run-id_alias_trimmed.fastq          → Trimmed reads by alias (barcode)
-│   │   └── nanoplot/                           → Nanoplot diagnostic files
+│   │   └── nanoplot/                           → Nanoplot diagnostic files of trimmed reads
 │   └── mapped/ (optional)                      → Read mapping output folder
 │       ├── mm2_run-id_alias_trimmed.bam        → Mapped reads by alias (barcode)
 │       ├── mm2_run-id_alias_trimmed.bam.bai    → Index files by alias (barcode)
-│       └── nanoplot/                           → NanoPlot diagnostic files
-└── logs
+│       └── nanoplot/                           → NanoPlot diagnostic files of mapped reads
+└── logs/
     ├── config.sh                               → Copy of config file used to generate the data
     └── input_sheet.csv                         → Copy of the input sheet used to generate the data
 ```
+---
+### Indel analysis of Nanopore reads with CRISPResso2
 
+CRISPResso2 ([Pinello et al., 2016](https://www.nature.com/articles/nbt.3583); [Clement et al., 2019](https://www.nature.com/articles/nbt.3583)) is a computational tool that evaluates the outcomes of genome editing experiments subject to deep sequencing. However, it is known to encounter memory issues when processing long-read sequencing data such as that from Nanopore (see CRISPResso2 issues [#565](https://github.com/pinellolab/CRISPResso2/issues/565) and [#484](https://github.com/pinellolab/CRISPResso2/issues/484)). 
+
+To address this limitation, the script `scripts/indel_analysis.sh` extracts read segments of a fixed length (window) surrounding a user-specified DNA motif (e.g. a CRISPR protospacer) from aligned BAM files, and runs CRISPResso2 on these shorter reads. By restricting indel quantification to shorter regions near the expected edit site, this approach avoids memory bottlenecks. 
+
+This step is independent of the main pipeline and can be run multiple times per barcode using different reference contigs, DNA motifs, or window sizes.
+
+#### Usage:
+
+```bash
+bash scripts/indel_analysis.sh \
+    analysis/[experiment_id]/demux/mapped/[bam_file.bam] \
+    reference/[reference.fasta] \
+    "[reference_contig]" \
+    [protospacer_sequence] \
+    [window_length] \
+    [sample_name]
+```
+
+Arguments:
+- **experiment_id:** experiment name matching the one present inside the `data/` and `analysis/` folders.
+- **bam_file.bam:** input BAM file (aligned reads)
+- **reference.fasta:** FASTA file used as mapping reference
+- **reference_contig:** reference contig label name matching the reference FASTA header (e.g. chr16 for GRCh38)
+- **protospacer_sequence:** target motif (e.g. CRISPR protospacer sequence)
+- **window_length:** length of window (bp) centered around motif
+- **sample_name:** unique identifier used to label output folder and CRISPResso2 reports
+
+#### Output
+
+Running the script creates a new folder `crispresso/` under  `analysis/[experiment_id]/demux` with the following structure:
+
+```
+demux/
+├── raw/
+├── trimmed/
+├── mapped/
+└── crispresso/                             → indel_analysis.sh output folder
+    └── sample_name/                                    
+        ├── chopped.fastq                   → Trimmed reads (windowed around motif)
+        ├── report.json                     → BAM trimming summary
+        ├── CRISPResso_on_sample_name.html  → CRISPResso2 HTML report
+        └── CRISPResso_on_sample_name/      → CRISPResso2 analysis files
+```
+---
 ## Author
 
 Developed by **Gabriel Martínez-Gálvez**
 
-Woltjen Laboratory, Center for iPS Cell Research and Application (CiRA), Kyoto Universiry
+Woltjen Laboratory, Center for iPS Cell Research and Application (CiRA), Kyoto University
