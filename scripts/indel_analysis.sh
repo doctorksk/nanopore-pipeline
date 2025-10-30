@@ -19,7 +19,14 @@ sample_name=$6  # Sample name (used for output directory)
 contig=$(echo $header | cut -d ' ' -f1)
 
 # Create a dedicated output directory for this sample
-mkdir -p "./$sample_name"
+# mkdir -p "./$sample_name"
+
+# Derive output directory relative to the BAM file
+bam_dir=$(dirname "$bam_in")
+out_root="$(dirname "$bam_dir")/crispresso"
+outdir="$out_root/$sample_name"
+mkdir -p $outdir
+
 
 # ------------------ Trim reads around motif ------------------
 
@@ -30,21 +37,21 @@ mkdir -p "./$sample_name"
 # Output:
 #   - Trimmed reads in FASTQ format.
 #   - JSON report with motif match info and window coordinates.
-python ~/nanopore/scripts/chop_bam_motif.py \
+python scripts/chop_bam_motif.py \
     --bam "$bam_in" \
     --ref "$ref" \
     --contig "$contig" \
     --motif "$motif_seq" \
     --window "$window_size" \
-    --out "$sample_name/chopped.fastq" \
-    --log "$sample_name/report.json" \
+    --out "$outdir/chopped.fastq" \
+    --log "$outdir/report.json" \
     --max-distance 2
 
 # ------------------ Extract amplicon sequence ------------------
 
 # Retrieve window start and end positions from the JSON report
-amplicon_start=$(jq -r '.window_start' "$sample_name/report.json")
-amplicon_end=$(jq -r '.window_end' "$sample_name/report.json")
+amplicon_start=$(jq -r '.window_start' "$outdir/report.json")
+amplicon_end=$(jq -r '.window_end' "$outdir/report.json")
 
 # Extract the amplicon sequence from the reference using samtools faidx
 # and clean FASTA formatting (uppercase, single line, no header)
@@ -59,12 +66,12 @@ motif_seq=$(echo "$motif_seq" | tr 'acgt' 'ACGT')
 # Verify whether the motif is present in the extracted amplicon sequence.
 # If not, check the reverse complement orientation and adjust accordingly.
 if [[ "$crispresso_amplicon" == *"$motif_seq"* ]]; then
-    echo "Spacer sequence found in reference"
+    echo "Spacer sequence successfully found in reference"
 else
     # Compute reverse complement of the amplicon
     revcomp=$(echo "$crispresso_amplicon" | rev | tr 'ACGTacgt' 'TGCAtgca')
     if [[ "$revcomp" == *"$motif_seq"* ]]; then
-        echo "Spacer sequence found in reverse complement orientation"
+        echo "Spacer sequence successfully found in reverse complement orientation"
         crispresso_amplicon=$revcomp
     else
         echo "Spacer sequence not found in any orientation of reference"
@@ -84,8 +91,8 @@ fi
 #   -o                   → Output directory.
 CRISPResso -p 32 \
     --ignore_substitutions \
-    -r1 "$sample_name/chopped.fastq" \
+    -r1 "$outdir/chopped.fastq" \
     -g "$motif_seq" \
     -a "$crispresso_amplicon" \
     -n "$sample_name" \
-    -o "$sample_name/"
+    -o "$outdir/"
