@@ -3,15 +3,18 @@
 # chop_bam_motif.py
 #
 # This script extracts and trims reads from a BAM file around a
-# specific motif found in a reference contig.
+# specific CRISPR gRNA protospacer found in a reference contig.
 #
 # Pipeline:
 #   1. Find the motif (exact or approximate) in the reference contig.
-#   2. Define a fixed-size window centered on the motif midpoint.
-#   3. From the BAM, extract reads that *fully span* this window.
-#   4. Trim each read to the subsequence mapping to this region.
-#   5. Write trimmed reads to FASTQ (for remapping or polishing).
-#   6. Write a JSON log with summary statistics.
+#   2. Determine motif orientation (+ or - strand).
+#   3. Compute the *Cas9 cut site* (3 bp upstream of the PAM-proximal
+#   end of the protospacer).
+#   4. Define a fixed-size window centered on the cut site.
+#   5. From the BAM, extract reads that fully span this window.
+#   6. Trim each read to the subsequence mapping to this region.
+#   7. Write trimmed reads to FASTQ (for remapping or polishing).
+#   8. Write a JSON log with summary statistics.
 #
 # Requirements:
 #   pysam, pyfaidx, biopython, edlib
@@ -92,13 +95,13 @@ def find_approx_motif_edlib(fasta, contig, motif, max_distance):
 
 
 # ------------------ Compute window coordinates ------------------
-def compute_window(midpoint, window_size, contig_len):
+def compute_window(center, window_size, contig_len):
     """
-    Compute [start, end) window centered on given midpoint.
+    Compute [start, end) window centered on given coordinate (e.g., cut site).
     Adjusts for contig boundaries if needed.
     """
     half = window_size // 2
-    ws, we = midpoint - half, midpoint + half
+    ws, we = center - half, center + half
 
     # Adjust if window size off by 1 (odd/even mismatch)
     if (we - ws) < window_size:
@@ -166,12 +169,12 @@ def extract_window_from_read(aln, ws, we):
 # ------------------ Main workflow ------------------
 def main():
     # ----- Parse command-line arguments -----
-    ap = argparse.ArgumentParser(description="Trim BAM reads to window around motif, output FASTQ.")
+    ap = argparse.ArgumentParser(description="Trim BAM reads to window around Cas9 cut site (3bp upstream of PAM).")
     ap.add_argument("--bam", required=True, help="Input BAM file (sorted, indexed)")
     ap.add_argument("--ref", required=True, help="Reference FASTA file")
     ap.add_argument("--contig", required=True, help="Target contig name in reference")
-    ap.add_argument("--motif", required=True, help="Motif sequence to locate")
-    ap.add_argument("--window", type=int, required=True, help="Window size in bp centered on motif")
+    ap.add_argument("--motif", required=True, help="Motif (gRNA sequence, 5'→3')")
+    ap.add_argument("--window", type=int, required=True, help="Window size in bp centered on cut site")
     ap.add_argument("--out", required=True, help="Output FASTQ filename")
     ap.add_argument("--log", default="chop_report.json", help="Output JSON summary log")
     ap.add_argument("--max-distance", type=int, default=0,
@@ -210,11 +213,22 @@ def main():
         else:
             sys.exit("Motif not found.")
 
-    # ----- Step 3: Define window centered on motif -----
-    midpoint = pos + len(args.motif) // 2
-    ws, we = compute_window(midpoint, args.window, contig_len)
+    # ----- Step 3: Compute cut site -----
+    # Cas9 cuts 3 bp upstream of PAM. Since the PAM is adjacent to the motif,
+    # this corresponds to 3 bp from the PAM-proximal end of the protospacer.
+    # (+) strand: cut = motif_end - 3
+    # (-) strand: cut = motif_start + 3
+    motif_len = len(args.motif)
+    if strand == "+":
+        cut_site = pos + motif_len - 3
+    else:
+        cut_site = pos + 3
 
-    # ----- Step 4: Extract reads covering window -----
+    # ----- Step 4: Define window centered on cut site -----
+    ws, we = compute_window(cut_site, args.window, contig_len)
+    window_seq = str(fasta[args.contig][ws:we].seq).upper()
+
+    # ----- Step 5: Extract reads covering window -----
     bam = pysam.AlignmentFile(args.bam, "rb")
     records, total, kept = [], 0, 0
     for aln in bam.fetch(args.contig, ws, we):
@@ -227,27 +241,30 @@ def main():
             kept += 1
     bam.close()
 
-    # ----- Step 5: Write FASTQ output -----
+    # ----- Step 6: Write FASTQ output -----
     with open(args.out, "w") as f:
         SeqIO.write(records, f, "fastq")
 
-    # ----- Step 6: Write JSON summary -----
+    # ----- Step 7: Write JSON summary -----
     report = {
         "contig": args.contig,
         "motif": args.motif,
         "mode": mode,
         "motif_position": pos,
-        "strand": strand,              # + or -
+        "motif_length": motif_len,
+        "strand": strand,
+        "cut_site": cut_site,
         "edit_distance": edit_distance,
         "window_start": ws,
         "window_end": we,
+        "window_sequence": window_seq,
         "reads_examined": total,
         "reads_kept": kept
     }
     with open(args.log, "w") as fh:
         json.dump(report, fh, indent=2)
 
-    print(f"✅ Done. {kept}/{total} reads kept. FASTQ written to {args.out}")
+    print(f"✅ Done. Cut site at {cut_site} ({strand} strand). {kept}/{total} reads kept. FASTQ written to {args.out}")
 
 
 # ------------------ Entrypoint ------------------

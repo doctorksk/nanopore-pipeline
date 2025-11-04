@@ -175,11 +175,26 @@ analysis/experiment_id/
 
 CRISPResso2 ([Pinello et al., 2016](https://www.nature.com/articles/nbt.3583); [Clement et al., 2019](https://www.nature.com/articles/nbt.3583)) is a computational tool that evaluates the outcomes of genome editing experiments subject to deep sequencing. However, it is known to encounter memory issues when processing long-read sequencing data such as that from Nanopore (see CRISPResso2 issues [#565](https://github.com/pinellolab/CRISPResso2/issues/565) and [#484](https://github.com/pinellolab/CRISPResso2/issues/484)). 
 
-To address this limitation, the script `scripts/indel_analysis.sh` extracts read segments of a fixed length (window) surrounding a user-specified DNA motif (e.g. a CRISPR protospacer) from aligned BAM files, and runs CRISPResso2 on these shorter reads. By restricting indel quantification to shorter regions near the expected edit site, this approach avoids memory bottlenecks. 
+To address this limitation, the script `scripts/indel_analysis.sh` extracts read segments of a fixed length (window) surrounding a user-specified CRISPR protospacer from aligned BAM files, and runs CRISPResso2 on these shorter reads. By restricting indel quantification to shorter regions near the expected edit site, this approach avoids memory bottlenecks. 
 
 This step is independent of the main pipeline and can be run multiple times per barcode using different reference contigs, DNA motifs, or window sizes.
 
 #### Usage:
+
+If using a SLURM system, connect to a computing node from the login node by running:
+
+```bash
+srun --pty -p cpu -c 32 bash
+```
+If needed, load conda:
+```bash
+module load miniconda3
+```
+Activate the CRISPResso2 environment by running:
+```bash
+conda activate crispresso2_env
+```
+Finally, run `scripts/indel_analysis.sh` using the arguments listed below:
 
 ```bash
 bash scripts/indel_analysis.sh \
@@ -188,17 +203,20 @@ bash scripts/indel_analysis.sh \
     "[reference_contig]" \
     [protospacer_sequence] \
     [window_length] \
-    [sample_name]
+    [sample_name] \
+    [expected_amplicon]
 ```
 
 Arguments:
 - **experiment_id:** experiment name matching the one present inside the `data/` and `analysis/` folders.
-- **bam_file.bam:** input BAM file (aligned reads)
-- **reference.fasta:** FASTA file used as mapping reference
-- **reference_contig:** reference contig label name matching the reference FASTA header (e.g. chr16 for GRCh38)
-- **protospacer_sequence:** target motif (e.g. CRISPR protospacer sequence)
-- **window_length:** length of window (bp) centered around motif
+- **bam_file.bam:** input BAM file containing aligned reads
+- **reference.fasta:** FASTA file used as the mapping reference
+- **reference_contig:** contig name matching a header in the reference FASTA (e.g. chr16 for GRCh38)
+- **protospacer_sequence:** target motif sequence (e.g. CRISPR guide RNA spacer) in 5' to 3' orientation
+- **window_length:** window size (in bp) centered on the expected cut site (3 bp upstream of NGG PAM)
 - **sample_name:** unique identifier used to label output folder and CRISPResso2 reports
+- ***expected_amplicon:  (optional)*** expected amplicon after editing. The amplicon boundaries should correspond to the start and end of the reference region defined by `window_length`, centered on the expected Cas9 cleavage site (3 bp upstream of NGG PAM) 
+> **Note:** if `[expected_amplicon]` is ommited, remove the final `\` after `[sample_name]`
 
 #### Output
 
@@ -206,16 +224,17 @@ Running the script creates a new folder `crispresso/` under  `analysis/[experime
 
 ```
 demux/
-├── raw/
-├── trimmed/
-├── mapped/
 └── crispresso/                             → indel_analysis.sh output folder
-    └── sample_name/                                    
-        ├── chopped.fastq                   → Trimmed reads (windowed around motif)
-        ├── report.json                     → BAM trimming summary
-        ├── CRISPResso_on_sample_name.html  → CRISPResso2 HTML report
-        └── CRISPResso_on_sample_name/      → CRISPResso2 analysis files
+│   └── sample_name/                                    
+│       ├── chopped.fastq                   → Trimmed reads (windowed around motif)
+│       ├── report.json                     → BAM trimming summary
+│       ├── CRISPResso_on_sample_name.html  → CRISPResso2 HTML report
+│       └── CRISPResso_on_sample_name/      → CRISPResso2 analysis files
+└── ...
 ```
+
+To visualize the HTML report, make sure to the `CRISPResso_on_sample_name.html` file and the `CRISPResso_on_sample_name/` folder under the same directory.
+
 ---
 ## Author
 

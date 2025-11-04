@@ -6,12 +6,13 @@
 # and runs CRISPResso for indel quantification.
 
 # ------------------ Input arguments ------------------
-bam_in=$1       # Input BAM file (aligned reads)
-ref=$2          # Reference FASTA file
-header=$3       # Contig header line (from FASTA; includes contig name and optional description)
-motif_seq=$4    # Target motif (spacer or protospacer sequence)
-window_size=$5  # Window size (bp) centered around motif
-sample_name=$6  # Sample name (used for output directory)
+bam_in=$1             # Input BAM file (aligned reads)
+ref=$2                # Reference FASTA file
+header=$3             # Contig header line (from FASTA)
+motif_seq=$4          # Target motif (spacer or protospacer sequence)
+window_size=$5        # Window size (bp) centered around motif
+sample_name=$6        # Sample name (used for output directory)
+expected_amplicon=$7  # (Optional) Edited amplicon sequence
 
 # ------------------ Setup ------------------
 
@@ -52,11 +53,7 @@ python scripts/chop_bam_motif.py \
 # Retrieve window start and end positions from the JSON report
 amplicon_start=$(jq -r '.window_start' "$outdir/report.json")
 amplicon_end=$(jq -r '.window_end' "$outdir/report.json")
-
-# Extract the amplicon sequence from the reference using samtools faidx
-# and clean FASTA formatting (uppercase, single line, no header)
-crispresso_amplicon=$(samtools faidx "$ref" "${contig}:${amplicon_start}-${amplicon_end}" | \
-    tail -n +2 | tr -d '\n' | tr 'acgt' 'ACGT')
+crispresso_amplicon=$(jq -r '.window_sequence' "$outdir/report.json")
 
 # Convert motif sequence to uppercase for consistency
 motif_seq=$(echo "$motif_seq" | tr 'acgt' 'ACGT')
@@ -77,22 +74,24 @@ else
         echo "Spacer sequence not found in any orientation of reference"
     fi
 fi
-
 # ------------------ Run CRISPResso ------------------
 
-# Perform indel quantification using CRISPResso.
-# Options:
-#   -p 32                → Use 32 threads.
-#   --ignore_substitutions → Ignore base substitutions (indels only).
-#   -r1                  → Input FASTQ file with motif-centered reads.
-#   -g                   → Target (guide) sequence.
-#   -a                   → Reference amplicon sequence.
-#   -n                   → Sample name (used for naming output files).
-#   -o                   → Output directory.
-CRISPResso -p 32 \
-    --ignore_substitutions \
-    -r1 "$outdir/chopped.fastq" \
-    -g "$motif_seq" \
-    -a "$crispresso_amplicon" \
-    -n "$sample_name" \
-    -o "$outdir/"
+# Construct base CRISPResso command
+crispresso_cmd=(
+  CRISPResso -p 32
+  --ignore_substitutions
+  -r1 "$outdir/chopped.fastq"
+  -g "$motif_seq"
+  -a "$crispresso_amplicon"
+  -n "$sample_name"
+  -o "$outdir/"
+)
+
+# If user provided expected amplicon (HDR or PE), include it
+if [[ -n "$expected_amplicon" ]]; then
+    echo "Including expected amplicon in CRISPResso run."
+    crispresso_cmd+=(-e "$expected_amplicon")
+fi
+
+# Execute CRISPResso
+"${crispresso_cmd[@]}"
