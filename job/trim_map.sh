@@ -1,6 +1,5 @@
 #!/bin/bash
-# This script orchestrates adapter/quality trimming
-# and optionally read mapping depending on the config.
+# This script orchestrates adapter/quality trimming and optional read mapping.
 
 # ------------------ Setup ------------------
 
@@ -29,8 +28,8 @@ mkdir -p $trim_out
 for fastq in "$demux_out"/*.fastq; do
     [[ $fastq == *_unclassified.fastq ]] && continue  # Skip unclassified reads
 
-    base=$(basename "$fastq")
-    alias=$(echo "$base" | sed -E 's/^[^_]+_([^_]+.*)\.fastq/\1/')
+    base=$(basename "$fastq" .fastq)
+    alias=$(echo "$base.fastq" | sed -E 's/^[^_]+_([^_]+.*)\.fastq/\1/')
 
     # Extract trimming parameters (cols 7–9) for this alias from the input_sheet.csv
     read quality minlength maxlength <<< $(awk -F',' -v a="$alias" '$5==a {print $7, $8, $9}' "job/input_sheet.csv")
@@ -44,33 +43,21 @@ for fastq in "$demux_out"/*.fastq; do
 
     # Run trimming for this single FASTQ file
     bash scripts/trim_fastq.sh "$fastq" "$quality" "$minlength" "$maxlength" "$trim_out"
+
+    # Look up reference path from sample sheet (col 6, matching alias in col 5)
+    ref=$(awk -F',' -v a="$alias" '$5==a {print $6}' "job/input_sheet.csv")
+
+    # If no reference entry found OR empty reference → skip
+    if [ -z "$ref" ]; then
+        echo "Skipping mapping for $alias (no reference specified)"
+        continue
+    fi
+
+     # Define mapping output directory.
+     map_out=analysis/$expid/demux/mapped
+     mkdir -p "$map_out"
+
+    # Run mapping for this single trimmed FASTQ file
+    echo "Mapping $alias using reference $ref"
+    bash scripts/map_fastq.sh "$trim_out/${base}_trimmed.fastq" "reference/$ref" "$map_out"
 done
-
-
-# ------------------ Optional mapping ------------------
-
-# Check the "map" variable from config.sh to decide if mapping should run.
-if [ "$map" = "TRUE" ]; then 
-    
-    # Define mapping output directory.
-    map_out=analysis/$expid/demux/mapped
-    mkdir -p "$map_out"
-    
-    # Loop over trimmed FASTQs
-    for fastq in "$trim_out"/*.fastq; do
-        # Extract alias from filename: runid_alias_trimmed.fastq → alias
-        base=$(basename "$fastq")
-        alias=$(echo "$base" | sed -E 's/^[^_]+_([^_]+.*)_trimmed\.fastq/\1/')
-
-        # Look up reference path from sample sheet (col 6, matching alias in col 5)
-        ref=$(awk -F',' -v a="$alias" '$5==a {print $6}' "job/input_sheet.csv")
-
-        if [ -z "$ref" ]; then
-            echo "ERROR: No reference found in sample sheet for alias $alias"
-            exit 1
-        fi
-
-        # Run mapping
-        bash scripts/map_fastq.sh "$fastq" "reference/$ref" "$map_out"
-    done
-fi

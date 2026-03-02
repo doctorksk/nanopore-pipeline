@@ -7,7 +7,7 @@
 # ------------------ Input arguments ------------------
 kit_name=$1       # Sequencing kit name (e.g. SQK-RBK114-96)
 sample_sheet=$2   # Sample sheet CSV linking barcodes to sample names
-input_bam=$3      # Input BAM file with basecalled reads
+input_bam=$3      # Directory with with basecalled reads
 outdir=$4         # Output directory for demultiplexed reads and QC plots
 
 # ------------------ Demultiplexing ------------------
@@ -19,7 +19,7 @@ outdir=$4         # Output directory for demultiplexed reads and QC plots
 #   --emit-fastq     → Output demultiplexed reads as FASTQ files (one per barcode).
 # Output: one FASTQ file per barcode in the specified output directory.
 dorado demux --kit-name $kit_name --sample-sheet $sample_sheet --emit-fastq \
-    $input_bam \
+    $input_bam/calls.bam \
     --output-dir $outdir
 
 # ------------------ NanoPlot QC ------------------

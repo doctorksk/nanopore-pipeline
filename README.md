@@ -1,6 +1,6 @@
 # Nanopore basecalling and analysis pipeline
 
-Analysis pipeline of Nanopore pod5 files. Basecalling, read trimming, optional mapping, and scripts to perform indel analysis of mapped reads using CRISPResso2.
+Analysis pipeline of Nanopore pod5 files compatible with Kyoto University's C2 HPC cluster via SLURM scheduling. Pipeline includes basecalling, read trimming, mapping (optional), and scripts to perform indel analysis of mapped reads using CRISPResso2.
 
 > **IMPORTANT:** This pipeline is not compatible with dorado version 1.2.0 or later. The latest supported version is dorado 1.1.1.
 
@@ -18,6 +18,7 @@ nanopore_pipeline/
 ```
 ---
 ## Installation
+> **IMPORTANT:** You only need to run installation the first time.
 
 ### 1. Clone the nanopore-pipeline repository
 ```bash
@@ -29,11 +30,14 @@ cd nanopore-pipeline
 module load miniconda3
 ```
 ### 3. Create conda environments
-Two environments are required:
+To basecall, trim, and map create the `nanopore_env` environment by running:
 ```bash
 # For basecalling, trimming, and mapping
 conda env create -f nanopore_env.yml
-
+```
+(Optional)
+For automated CRISPResso2 indel analyses, create the `crispresso2_env` environment by running:
+```bash
 # For CRISPResso2-based indel analysis
 conda env create -f crispresso2_env.yml
 ```
@@ -41,7 +45,7 @@ conda env create -f crispresso2_env.yml
 ### 4. Download the dorado installation and basecalling models
 
 #### 4.1. Download dorado
-Follow the instructions in the [official dorado repository](https://github.com/nanoporetech/dorado#installation) to obtain the latest comparible dorado release (e.g. *dorado-x.y.z-linux-x64*). 
+Follow the instructions in the [official dorado repository](https://github.com/nanoporetech/dorado#installation) to obtain the latest comparible dorado release (e.g. *dorado-1.1.1-linux-x64*). 
 
 #### 4.2. Extract and move the dorado folder
 Decompress the downloaded file, and move the extracted folder (e.g. `dorado-x.y.z-linux-x64/`) into the `dorado_model/`  folder.
@@ -59,14 +63,20 @@ Give dorado execution privileges by running:
 ```bash
 chmod +x dorado_model/[dorado_installation]/bin/dorado
 ```
-> Replace `dorado_installation` with the actual folder name (e.g. `dorado-x.y.z-linux-x64`).
+> Replace `[dorado_installation]` with the actual folder name (e.g. `dorado-x.y.z-linux-x64`).
 
 #### 4.4 Verify dorado installation
 Verify the dorado installation by running:
 ```bash
 dorado_model/[dorado_installation]/bin/dorado --version
 ```
-> Replace `dorado_installation` with the actual folder name (e.g. `dorado-x.y.z-linux-x64`).
+> Replace `[dorado_installation]` with the actual folder name (e.g. `dorado-x.y.z-linux-x64`).
+
+If installed correctly, running the command above should return something similar to:
+```bash
+[time stamp] [info] Running: "--version"
+1.1.1+e72f1492
+```
 
 #### 4.5 Download basecalling models
 To ensure that the pipeline can work without an internet connection, download all available dorado basecalling models by running:
@@ -76,11 +86,11 @@ cd model
 ../dorado_model/[dorado_installation]/bin/dorado download --model all
 cd ..
 ```
-> Replace `dorado_installation` with the actual folder name (e.g. `dorado-x.y.z-linux-x64`).
+> Replace `[dorado_installation]` with the actual folder name (e.g. `dorado-x.y.z-linux-x64`).
 
 ### 5. Download appropriate reference FASTA files for mapping
 
-Download the appropriate reference genomes or amplicons for minimap2 mapping and place it inside the `reference/` folder. For example, the hg38 (GRCh38) analysis set `hg38.analysisSet.fa.gz` from UCSC found [here](https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/analysisSet/).
+Download the appropriate reference genomes or amplicons for read mapping and place it inside the `reference/` folder. For example, the hg38 (GRCh38) analysis set `hg38.analysisSet.fa.gz` from UCSC found [here](https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/analysisSet/).
 
 ## Usage
 
@@ -104,19 +114,19 @@ Specify:
 - **kit:** barcoding kit used (e.g. SQK-NBD114-24)
 - **experiment_id:** ID of the experiment to analyze. Should match the appropriate folder name inside `data/`
 - **barcode:** barcode number. *Output file names *WILL NOT* contain this barcode ID*
-- **alias:** custom id for the barcode. *Output file names *WILL* contain this identifier*
+- **alias:** custom id for the barcode (40 characters maximum including '-'). *Output file names *WILL* contain this identifier*
 > **Note:** aliases may **ONLY** include alphanumeric characters (Aa-Zz, 0-9) and hyphens (-). **DO NOT** include spaces, underscores (_), or other symbols (e.g. +, $, &, etc.)
-- **reference:** path relative to the `reference/` folder (e.g. *grch38/hg38.analysisSet.fa.gz*, not *reference/grch38/hg38.analysisSet.fa.gz*)
+- **reference:** path relative to the `reference/` folder (e.g. *grch38/hg38.analysisSet.fa.gz*, **NOT** *reference/grch38/hg38.analysisSet.fa.gz*)
+> **Note:** you may leave reference entries empty for barcodes you do not wish to map 
 - **quality:** minimum average read quality for trimming
-- **minlength:** minimum read length for trimming
-- **maxlength:** maximum read length for trimming
+- **minlength:** minimum read length to keep after trimming
+- **maxlength:** maximum read length to keep after trimming
 
-Edit the configuration file `job/config.sh` if needed.
+Edit the configuration file `job/config.sh` only if you need to change dorado versions or the dorado basecalling model (default: `dorado-1.1.1-linux-x64` and `dna_r10.4.1_e8.2_400bps_sup@v5.2.0`, respectively).
 
 Specify:
-- **dorado_dir:** name of the uncompressed folder with the desired dorado version (e.g. *dorado-1.1.1-linux-x64*
+- **dorado_dir:** name of the uncompressed folder with the desired dorado version (e.g. *dorado-1.1.1-linux-x64*)
 - **model_dir:** name of the desired basecalling model as it appears inside the `model/` folder (e.g. *dna_r10.4.1_e8.2_400bps_sup@v5.2.0*)
-- **map:** `map=TRUE` or `map=FALSE`, whether mapping is or is not to be performed, respectively
 
 > **Note:** In case `job/config.sh` is corrupted, delete it and remake it by copying and renaming it from the template file `job/config_template.sh` by running the following:
 > ```bash
@@ -233,7 +243,7 @@ demux/
 └── ...
 ```
 
-To visualize the HTML report, make sure to the `CRISPResso_on_sample_name.html` file and the `CRISPResso_on_sample_name/` folder under the same directory.
+To visualize the HTML report, make sure to download the `CRISPResso_on_sample_name.html` file and the `CRISPResso_on_sample_name/` folder under the same directory.
 
 ---
 ## Author
