@@ -2,7 +2,7 @@
 
 Analysis pipeline of Nanopore pod5 files compatible with Kyoto University's C2 HPC cluster via SLURM scheduling. Pipeline includes basecalling, read trimming, mapping (optional), and scripts to perform indel analysis of mapped reads using CRISPResso2.
 
-> **IMPORTANT:** This pipeline is not compatible with dorado version 1.2.0 or later. The latest supported version is dorado 1.1.1.
+> **Note:** This pipeline is compatible with dorado 1.1.x and later (including 1.2.0+).
 
 ## Directory structure
 
@@ -45,7 +45,7 @@ conda env create -f crispresso2_env.yml
 ### 4. Download the dorado installation and basecalling models
 
 #### 4.1. Download dorado
-Follow the instructions in the [official dorado repository](https://github.com/nanoporetech/dorado#installation) to obtain the latest comparible dorado release (e.g. *dorado-1.1.1-linux-x64*). 
+Follow the instructions in the [official dorado repository](https://github.com/nanoporetech/dorado#installation) to obtain the latest dorado release (e.g. *dorado-1.4.0-linux-x64*). 
 
 #### 4.2. Extract and move the dorado folder
 Decompress the downloaded file, and move the extracted folder (e.g. `dorado-x.y.z-linux-x64/`) into the `dorado_model/`  folder.
@@ -75,7 +75,7 @@ dorado_model/[dorado_installation]/bin/dorado --version
 If installed correctly, running the command above should return something similar to:
 ```bash
 [time stamp] [info] Running: "--version"
-1.1.1+e72f1492
+1.4.0+<hash>
 ```
 
 #### 4.5 Download basecalling models
@@ -122,10 +122,10 @@ Specify:
 - **minlength:** minimum read length to keep after trimming
 - **maxlength:** maximum read length to keep after trimming
 
-Edit the configuration file `job/config.sh` only if you need to change dorado versions or the dorado basecalling model (default: `dorado-1.1.1-linux-x64` and `dna_r10.4.1_e8.2_400bps_sup@v5.2.0`, respectively).
+Edit the configuration file `job/config.sh` to match your installed dorado version and desired basecalling model (default: `dorado-1.4.0-linux-x64` and `dna_r10.4.1_e8.2_400bps_sup@v5.2.0`, respectively).
 
 Specify:
-- **dorado_dir:** name of the uncompressed folder with the desired dorado version (e.g. *dorado-1.1.1-linux-x64*)
+- **dorado_dir:** name of the uncompressed folder with the desired dorado version (e.g. *dorado-1.4.0-linux-x64*)
 - **model_dir:** name of the desired basecalling model as it appears inside the `model/` folder (e.g. *dna_r10.4.1_e8.2_400bps_sup@v5.2.0*)
 
 > **Note:** In case `job/config.sh` is corrupted, delete it and remake it by copying and renaming it from the template file `job/config_template.sh` by running the following:

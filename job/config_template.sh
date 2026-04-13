@@ -12,8 +12,8 @@
 # DORADO MODEL SELECTION
 ########################
 
-# Indicate dorado version, e.g. dorado-0.6.0-linux-x64
-dorado_dir=dorado-1.1.1-linux-x64
+# Indicate dorado version, e.g. dorado-1.4.0-linux-x64
+dorado_dir=dorado-1.4.0-linux-x64
 # Indicate basecalling model, e.g. model/dna_r10.4.1_e8.2_400bps_sup@v5.2.0
 model_dir=dna_r10.4.1_e8.2_400bps_sup@v5.2.0
 
