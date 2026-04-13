@@ -18,9 +18,22 @@ outdir=$4         # Output directory for demultiplexed reads and QC plots
 #   --sample-sheet   → Provide CSV linking barcodes to sample identifiers.
 #   --emit-fastq     → Output demultiplexed reads as FASTQ files (one per barcode).
 # Output: one FASTQ file per barcode in the specified output directory.
+#
+# Dorado ≥1.2.0 writes FASTQ files into a nested MinKNOW-style directory tree
+# instead of flat into the output directory. We demux into a temporary subdirectory
+# and then collect all FASTQ files into the flat structure the rest of the pipeline
+# expects. This is compatible with both old (≤1.1.x) and new (≥1.2.0) dorado.
+
+demux_tmp=$outdir/.demux_tmp
+mkdir -p "$demux_tmp"
+
 dorado demux --kit-name $kit_name --sample-sheet $sample_sheet --emit-fastq \
     $input_bam/calls.bam \
-    --output-dir $outdir
+    --output-dir "$demux_tmp"
+
+# Collect all FASTQ files from the (possibly nested) temp directory into the flat output dir.
+find "$demux_tmp" -name "*.fastq" -exec mv {} "$outdir" \;
+rm -rf "$demux_tmp"
 
 # ------------------ NanoPlot QC ------------------
 
